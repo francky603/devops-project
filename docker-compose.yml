@@ -1,12 +1,14 @@
+version: "3"
 services:
   vote:
     image: franky0777/voting-app-vote:latest
     build:
       context: ./vote
     ports:
-      - "5000:80"
+      - "5000:443"
     depends_on:
       - redis
+    mem_limit: 512m
     networks:
       - app-network
   result:
@@ -14,9 +16,10 @@ services:
     build:
       context: ./result
     ports:
-      - "5001:80"
+      - "5001:443"
     depends_on:
       - postgres
+    mem_limit: 512m
     networks:
       - app-network
   worker:
@@ -26,6 +29,7 @@ services:
     depends_on:
       - redis
       - postgres
+    mem_limit: 512m
     networks:
       - app-network
   postgres:
@@ -36,20 +40,30 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - db-data:/var/lib/postgresql/data
+    mem_limit: 512m
     networks:
       - app-network
   redis:
     image: redis:alpine
+    mem_limit: 256m
     networks:
       - app-network
   sonarqube:
     image: sonarqube:community
     ports:
       - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonar
+      - SONAR_JDBC_USERNAME=postgres
+      - SONAR_JDBC_PASSWORD=postgres
+      - SONAR_JVM_OPTS=-Xmx1g
+    mem_limit: 2048m
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_extensions:/opt/sonarqube/extensions
+    depends_on:
+      - postgres
     networks:
       - app-network
   jenkins:
@@ -59,6 +73,9 @@ services:
     ports:
       - "8080:8080"
       - "50000:50000"
+    environment:
+      - JENKINS_ADMIN_EMAIL=m39624112@gmail.com
+    mem_limit: 1024m
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock

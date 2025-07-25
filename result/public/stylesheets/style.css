@@ -1,0 +1,5 @@
+body { font-family: Arial, sans-serif; text-align: center; }
+#content-container { margin-top: 50px; }
+#choice { display: flex; justify-content: center; }
+.choice { margin: 0 20px; }
+.divider { width: 1px; background: #ccc; }

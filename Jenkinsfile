@@ -1,60 +1,62 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-        DOCKERHUB_USERNAME = 'franky0777'
-        DOCKER_BUILDKIT = '1' // Enable BuildKit
+        DOCKERHUB_CREDENTIALS = credentials("dockerhub")
+        DOCKERHUB_USERNAME = "franky0777"
+        DOCKER_BUILDKIT = "1"
     }
     stages {
-        stage('Clone Repository') {
+        stage("Clone Repository") {
             steps {
-                git 'https://github.com/francky603/devops-project.git'
+                git "https://github.com/francky603/devops-project.git"
             }
         }
-        stage('Build Docker Images') {
+        stage("Build Docker Images") {
             steps {
-                sh 'docker compose build'
+                sh "docker-compose build"
             }
         }
-        stage('SonarQube Analysis') {
+        stage("SonarQube Analysis") {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner'
-                    withSonarQubeEnv('SonarQube') {
+                    def scannerHome = tool "SonarQubeScanner"
+                    withSonarQubeEnv("SonarQube") {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=voting-app -Dsonar.sources=vote,result,worker"
                     }
                 }
             }
         }
-        stage('Push to Docker Hub') {
+        stage("Push to Docker Hub") {
             steps {
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-                sh 'docker compose push'
+                script {
+                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                    sh "docker-compose push"
+                }
             }
         }
-        stage('Deploy') {
+        stage("Deploy") {
             steps {
-                sh 'docker compose up -d --remove-orphans'
+                sh "docker-compose up -d --remove-orphans"
             }
         }
-        stage('Verify Deployment') {
+        stage("Verify Deployment") {
             steps {
-                sh 'docker compose ps'
-                sh 'curl http://localhost:5000' // Vote service
-                sh 'curl http://localhost:5001' // Result service
+                sh "docker-compose ps"
+                sh "curl --insecure --retry 5 --retry-delay 5 https://localhost:5000 || exit 1"
+                sh "curl --insecure --retry 5 --retry-delay 5 https://localhost:5001 || exit 1"
             }
         }
     }
     post {
         success {
-            mail to: 'm39624112@gmail.com',
-                 subject: "Pipeline Success: ${env.JOB_NAME}",
-                 body: "The pipeline ${env.JOB_NAME} completed successfully. Access at http://<server-ip>:5000 (vote) and http://<server-ip>:5001 (result)."
+            mail to: "m39624112@gmail.com",
+                 subject: "Pipeline Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The pipeline ${env.JOB_NAME} completed successfully. Access vote at https://<server-ip>:5000 and result at https://<server-ip>:5001."
         }
         failure {
-            mail to: 'm39624112@gmail.com',
-                 subject: "Pipeline Failed: ${env.JOB_NAME}",
-                 body: "The pipeline ${env.JOB_NAME} failed. Check Jenkins logs for details."
+            mail to: "m39624112@gmail.com",
+                 subject: "Pipeline Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The pipeline ${env.JOB_NAME} failed. Check Jenkins logs at http://<server-ip>:8080/job/${env.JOB_NAME}/${env.BUILD_NUMBER}/console."
         }
     }
 }
