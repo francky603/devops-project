@@ -3,11 +3,12 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         DOCKERHUB_USERNAME = 'franky0777'
+        DOCKER_BUILDKIT = '1' // Enable BuildKit
     }
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/inaleoby/devops-project.git'
+                git 'https://github.com/francky603/devops-project.git'
             }
         }
         stage('Build Docker Images') {
