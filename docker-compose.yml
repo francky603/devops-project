@@ -1,0 +1,75 @@
+services:
+  vote:
+    image: franky0777/voting-app-vote:latest
+    build:
+      context: ./vote
+    ports:
+      - "5000:80"
+    depends_on:
+      - redis
+    networks:
+      - app-network
+  result:
+    image: franky0777/voting-app-result:latest
+    build:
+      context: ./result
+    ports:
+      - "5001:80"
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+  worker:
+    image: franky0777/voting-app-worker:latest
+    build:
+      context: ./worker
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=votes
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+  redis:
+    image: redis:alpine
+    networks:
+      - app-network
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    networks:
+      - app-network
+  jenkins:
+    image: franky0777/jenkins:latest
+    build:
+      context: ./jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  db-data:
+  jenkins_home:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
