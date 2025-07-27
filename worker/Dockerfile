@@ -1,5 +1,12 @@
-FROM python:3.9-slim
+# Build stage
+FROM openjdk:11-jdk-slim AS build
 WORKDIR /app
-COPY worker.py .
-RUN pip install --no-cache-dir redis psycopg2-binary
-CMD ["python", "worker.py"]
+COPY . /app
+RUN apt-get update && apt-get install -y maven
+RUN mvn package
+
+# Run stage
+FROM openjdk:11-jre-slim
+WORKDIR /app
+COPY --from=build /app/target/worker-1.0-SNAPSHOT.jar /app/worker.jar
+CMD ["java", "-jar", "worker.jar"]

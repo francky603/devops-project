@@ -1,7 +1,5 @@
-FROM node:16
+FROM python:3.9-slim
 WORKDIR /app
 COPY . /app
-COPY /home/franky/voting-app/server.crt /app/server.crt
-COPY /home/franky/voting-app/server.key /app/server.key
-RUN npm install
-CMD ["npm", "start"]
+RUN apt-get update && apt-get install -y     python3-pip     libpq-dev     && pip install flask gunicorn psycopg2-binary
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:app"]

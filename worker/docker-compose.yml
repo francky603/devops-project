@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  vote:
+    image: franky0777/voting-app-vote:latest
+    build: ./vote
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8097:80"
+    networks:
+      - frontend-net
+      - backend-net
+
+  result:
+    image: franky0777/voting-app-result:latest
+    build: ./result
+    ports:
+      - "8096:80"
+    networks:
+      - frontend-net
+      - backend-net
+
+  worker:
+    image: franky0777/voting-app-worker:latest
+    build: ./worker
+    depends_on:
+      - redis
+      - db
+    networks:
+      - backend-net
+
+  redis:
+    image: redis:alpine
+    networks:
+      - backend-net
+
+  db:
+    image: postgres:9.4
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+    networks:
+      - backend-net
+
+volumes:
+  db-data:
+
+networks:
+  frontend-net:
+  backend-net:
+
