@@ -1,12 +1,11 @@
-# Build stage
-FROM openjdk:11-jdk-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /app
-COPY . /app
-RUN apt-get update && apt-get install -y maven
-RUN mvn package
+COPY *.csproj ./
+RUN dotnet restore
+COPY . ./
+RUN dotnet publish -c Release -o out
 
-# Run stage
-FROM openjdk:11-jre-slim
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
-COPY --from=build /app/target/worker-1.0-SNAPSHOT.jar /app/worker.jar
-CMD ["java", "-jar", "worker.jar"]
+COPY --from=build /app/out .
+ENTRYPOINT ["dotnet", "Worker.dll"]
